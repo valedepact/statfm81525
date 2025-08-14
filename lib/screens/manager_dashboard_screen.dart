@@ -61,7 +61,7 @@ class ManagerDashboardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Correctly reference the public collection path
-    final publicTeamsCollection = FirebaseFirestore.instance.collection('artifacts/__app_id/public/data/teams');
+    final publicTeamsCollection = FirebaseFirestore.instance.collection('teams');
 
     return StreamBuilder<DocumentSnapshot>(
       // Update the stream to use the correct path
@@ -197,10 +197,16 @@ class ManagerDashboardScreen extends StatelessWidget {
                         final memberData = members[index].data() as Map<String, dynamic>;
                         final memberId = members[index].id;
                         final memberName = memberData['name'] ?? 'No Name';
+                        final imageUrl = memberData['imageUrl'];
                         return Card(
                           margin: const EdgeInsets.symmetric(vertical: 4),
                           child: ListTile(
-                            leading: const Icon(Icons.person),
+                            leading: imageUrl != null && imageUrl.isNotEmpty
+                                ? CircleAvatar(
+                                    backgroundImage: NetworkImage(imageUrl),
+                                    radius: 20,
+                                  )
+                                : const Icon(Icons.person),
                             title: Text(memberName),
                             subtitle: Text(memberData['email'] ?? 'No Email'),
                             trailing: IconButton(

@@ -6,7 +6,10 @@ import 'package:crypto/crypto.dart';
 import 'dart:convert';
 
 class TeamManagementLoginScreen extends StatefulWidget {
-  const TeamManagementLoginScreen({super.key});
+  final String teamId;
+  final String teamName;
+
+  const TeamManagementLoginScreen({super.key, required this.teamId, required this.teamName});
 
   @override
   State<TeamManagementLoginScreen> createState() => _TeamManagementLoginScreenState();
@@ -14,7 +17,6 @@ class TeamManagementLoginScreen extends StatefulWidget {
 
 class _TeamManagementLoginScreenState extends State<TeamManagementLoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _teamNameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   bool _isLoading = false;
@@ -26,24 +28,18 @@ class _TeamManagementLoginScreenState extends State<TeamManagementLoginScreen> {
       });
 
       try {
-        final teamName = _teamNameController.text.trim();
         final password = _passwordController.text.trim();
 
         // Hash the entered password for comparison
         final passwordBytes = utf8.encode(password);
         final hashedPassword = sha256.convert(passwordBytes).toString();
 
-        // Query Firestore to find the team by name
-        final querySnapshot = await _firestore
-            .collection('teams')
-            .where('teamName', isEqualTo: teamName)
-            .limit(1)
-            .get();
+        // Fetch the team document directly using the provided teamId
+        final teamDoc = await _firestore.collection('teams').doc(widget.teamId).get();
 
-        if (querySnapshot.docs.isNotEmpty) {
-          final teamDoc = querySnapshot.docs.first;
+        if (teamDoc.exists) {
           final teamData = teamDoc.data();
-          final storedPasswordHash = teamData['managerPasswordHash'];
+          final storedPasswordHash = teamData?['managerPasswordHash'];
 
           // Check if the hashed passwords match
           if (hashedPassword == storedPasswordHash) {
@@ -63,7 +59,7 @@ class _TeamManagementLoginScreenState extends State<TeamManagementLoginScreen> {
             );
           }
         } else {
-          // Team not found
+          // Team not found (should not happen if navigated from TeamListScreen)
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Team not found.')),
@@ -86,7 +82,7 @@ class _TeamManagementLoginScreenState extends State<TeamManagementLoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Team Login'),
+        title: Text('Login to ${widget.teamName}'),
         centerTitle: true,
       ),
       body: Padding(
@@ -96,27 +92,13 @@ class _TeamManagementLoginScreenState extends State<TeamManagementLoginScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Text(
-                'Log in to your team management dashboard:',
-                style: TextStyle(fontSize: 20),
+              Text(
+                'Enter password for ${widget.teamName}:',
+                style: const TextStyle(fontSize: 20),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 20),
-              TextFormField(
-                controller: _teamNameController,
-                decoration: const InputDecoration(
-                  labelText: 'Team Name',
-                  border: OutlineInputBorder(),
-                  icon: Icon(Icons.group),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a team name';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 10),
+              // Remove team name text field as it's now passed in
               TextFormField(
                 controller: _passwordController,
                 obscureText: true,

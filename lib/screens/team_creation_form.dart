@@ -37,7 +37,7 @@ class _TeamCreationFormState extends State<TeamCreationForm> {
 
       try {
         // Correctly reference the public collection path
-        final publicTeamsCollection = _firestore.collection('artifacts/__app_id/public/data/teams');
+        final publicTeamsCollection = _firestore.collection('teams');
 
         // Add the new team document to the public 'teams' collection
         final docRef = await publicTeamsCollection.add(newTeamData);

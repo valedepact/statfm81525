@@ -1,0 +1,6 @@
+    // Teams collection
+    match /teams/{teamId} {
+      // Allow anyone to read/write
+      allow read, write: if true;
+
+      // Members subcollection

@@ -10,6 +10,7 @@ import 'package:statform/screens/match_management_screen.dart';
 import 'package:statform/screens/match_screen.dart';
 import 'package:statform/screens/team_creation_form.dart';
 import 'package:statform/screens/team_stats_screen.dart';
+import 'package:statform/screens/team_list_screen.dart'; // Added import for TeamListScreen
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -48,49 +49,7 @@ class HandballApp extends StatelessWidget {
         '/matchManagement': (context) => const MatchManagementScreen(),
         '/teamCreation': (context) => const TeamCreationForm(),
       },
-      onGenerateRoute: (settings) {
-        final routeName = settings.name;
-        final args = settings.arguments;
-
-        switch (routeName) {
-          case '/teamStats':
-            if (args is Map<String, dynamic>) {
-              final team = args['team'] as TeamStats;
-              final teamId = args['teamId'] as String;
-              return MaterialPageRoute(
-                builder: (context) {
-                  return TeamStatsScreen(team: team, teamId: teamId);
-                },
-              );
-            }
-            break;
-          case '/match':
-            if (args is Map<String, dynamic>) {
-              final match = args['match'] as Match;
-              final homeTeamId = args['homeTeamId'] as String;
-              final awayTeamId = args['awayTeamId'] as String;
-              return MaterialPageRoute(
-                builder: (context) {
-                  return MatchScreen(
-                      match: match,
-                      homeTeamId: homeTeamId,
-                      awayTeamId: awayTeamId);
-                },
-              );
-            }
-            break;
-          case '/managerDashboard':
-            if (args is String) {
-              return MaterialPageRoute(
-                builder: (context) {
-                  return ManagerDashboardScreen(teamId: args);
-                },
-              );
-            }
-            break;
-        }
-        return null;
-      },
+      // Removed onGenerateRoute for /managerDashboard as it's now handled by TeamListScreen
     );
   }
 }
@@ -156,8 +115,13 @@ class HomePage extends StatelessWidget {
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: () {
-                  debugPrint('Navigating to Manager Dashboard');
-                  Navigator.pushNamed(context, '/managerDashboard', arguments: 'some_team_id_here');
+                  debugPrint('Navigating to TeamListScreen');
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const TeamListScreen(),
+                    ),
+                  );
                 },
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
