@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:statform/screens/manager_dashboard_screen.dart';
 import 'package:crypto/crypto.dart';
 import 'dart:convert'; // For utf8.encode
+import 'package:hive_flutter/hive_flutter.dart'; // Import for Hive
 
 class TeamCreationForm extends StatefulWidget {
   const TeamCreationForm({super.key});
@@ -41,6 +42,10 @@ class _TeamCreationFormState extends State<TeamCreationForm> {
 
         // Add the new team document to the public 'teams' collection
         final docRef = await publicTeamsCollection.add(newTeamData);
+
+        // Save to Hive for offline access
+        final teamsBox = Hive.box('teams');
+        await teamsBox.put(docRef.id, newTeamData); // Use Firestore ID as Hive key
 
         // Check if the widget is still mounted before showing the snackbar or navigating
         if (!context.mounted) return;

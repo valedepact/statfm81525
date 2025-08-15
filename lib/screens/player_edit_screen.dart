@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:hive_flutter/hive_flutter.dart'; // Import for Hive
 
 class PlayerEditScreen extends StatefulWidget {
   final String teamId;
@@ -89,6 +90,18 @@ class _PlayerEditScreenState extends State<PlayerEditScreen> {
         'shirtNumber': shirtNumber,
         'position': _selectedPosition,
       });
+
+      // Update in Hive for offline access
+      final membersBox = Hive.box('members');
+      await membersBox.put(widget.playerId, {
+        'name': _playerNameController.text.trim(),
+        'phoneNumber': _playerPhoneNumberController.text.trim(),
+        'shirtNumber': shirtNumber,
+        'position': _selectedPosition,
+        'teamId': widget.teamId, // Ensure teamId is still present
+        // Note: joinedAt and imageUrl are not updated here as they are not editable on this screen
+      });
+
       _showSnackBar('Player updated successfully!');
       if (mounted) {
         Navigator.pop(context); // Go back to the previous screen

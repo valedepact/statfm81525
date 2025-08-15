@@ -1,6 +1,7 @@
 // team_member_creation_screen.dart
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:hive_flutter/hive_flutter.dart'; // Import for Hive
 
 class TeamMemberCreationScreen extends StatefulWidget {
   final String teamId;
@@ -54,18 +55,32 @@ class _TeamMemberCreationScreenState extends State<TeamMemberCreationScreen> {
 
     try {
       // Access the sub-collection 'members' under the specific team document.
-      await FirebaseFirestore.instance
+      final DocumentReference docRef = await FirebaseFirestore.instance
           .collection('teams')
           .doc(widget.teamId)
           .collection('members')
           .add({
         'name': _memberNameController.text.trim(),
-        'phoneNumber': _memberPhoneNumberController.text.trim(), // Storing phone number instead of email
-        'shirtNumber': shirtNumber, // Add shirt number
-        'position': _selectedPosition, // Add selected position
+        'phoneNumber': _memberPhoneNumberController.text.trim(),
+        'shirtNumber': shirtNumber,
+        'position': _selectedPosition,
         'joinedAt': FieldValue.serverTimestamp(),
-        'imageUrl': null, // Removed image upload logic, set to null
+        'imageUrl': null,
       });
+
+      // Save to Hive for offline access within the team's members sub-box
+      final membersBox = Hive.box('members');
+      await membersBox.put(docRef.id, { // Use Firestore ID as Hive key
+        'name': _memberNameController.text.trim(),
+        'phoneNumber': _memberPhoneNumberController.text.trim(),
+        'shirtNumber': shirtNumber,
+        'position': _selectedPosition,
+        // For `joinedAt`, Hive doesn't support FieldValue.serverTimestamp(), so you might save DateTime.now()
+        'joinedAt': DateTime.now().toIso8601String(), // Store as string for simplicity
+        'imageUrl': null,
+        'teamId': widget.teamId, // Store teamId for easy lookup later
+      });
+
       _showSnackBar('Member added successfully!');
       _memberNameController.clear();
       _memberPhoneNumberController.clear(); // Clear phone number field

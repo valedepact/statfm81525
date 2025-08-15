@@ -5,6 +5,7 @@ import 'package:statform/widgets/match_player_stats_table.dart';
 import 'package:uuid/uuid.dart';
 import 'package:statform/widgets/match_timer_display.dart';
 import 'package:statform/widgets/active_penalties_display.dart';
+import 'package:hive/hive.dart';
 
 class MatchScreen extends StatefulWidget {
   final String homeTeamId;
@@ -220,8 +221,26 @@ class _MatchScreenState extends State<MatchScreen> with SingleTickerProviderStat
         'awayTeamName': _awayTeamName,
         'timestamp': FieldValue.serverTimestamp(),
         'duration': widget.matchDuration,
+        'homePlayerIds': widget.homePlayerIds,
+        'awayPlayerIds': widget.awayPlayerIds,
         'playerStats': finalPlayerStats,
       });
+
+      // Save to Hive for offline access
+      final matchRecordsBox = Hive.box('matchRecords');
+      await matchRecordsBox.put(matchId, {...
+        matchRecordsBox.get(matchId) as Map<dynamic, dynamic>? ?? {},
+        'homeTeamId': widget.homeTeamId,
+        'awayTeamId': widget.awayTeamId,
+        'homeTeamName': _homeTeamName,
+        'awayTeamName': _awayTeamName,
+        'timestamp': DateTime.now().toIso8601String(), // Use current time for Hive
+        'duration': widget.matchDuration,
+        'homePlayerIds': widget.homePlayerIds,
+        'awayPlayerIds': widget.awayPlayerIds,
+        'playerStats': finalPlayerStats,
+      });
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Match stats saved successfully!')),
