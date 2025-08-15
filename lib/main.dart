@@ -46,10 +46,11 @@ class HandballApp extends StatelessWidget {
       home: const HomePage(),
       routes: {
         '/handballForm': (context) => const HandballFormScreen(),
-        '/matchManagement': (context) => const MatchManagementScreen(),
         '/teamCreation': (context) => const TeamCreationForm(),
       },
       // Removed onGenerateRoute for /managerDashboard as it's now handled by TeamListScreen
+      // Removed specific routes for MatchManagementScreen, TeamStatsScreen, MatchScreen from here
+      // as they now require arguments and are navigated to via MaterialPageRoute
     );
   }
 }
@@ -92,7 +93,12 @@ class HomePage extends StatelessWidget {
               ElevatedButton(
                 onPressed: () {
                   debugPrint('Navigating to MatchManagementScreen');
-                  Navigator.pushNamed(context, '/matchManagement');
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const MatchManagementScreen(),
+                    ),
+                  );
                 },
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),

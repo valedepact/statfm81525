@@ -1,9 +1,6 @@
 // team_member_creation_screen.dart
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:image_picker/image_picker.dart'; // Added import for image_picker
-import 'dart:io'; // Added import for File
-import 'package:firebase_storage/firebase_storage.dart'; // Added import for Firebase Storage
 
 class TeamMemberCreationScreen extends StatefulWidget {
   final String teamId;
@@ -16,10 +13,9 @@ class TeamMemberCreationScreen extends StatefulWidget {
 
 class _TeamMemberCreationScreenState extends State<TeamMemberCreationScreen> {
   final TextEditingController _memberNameController = TextEditingController();
-  final TextEditingController _memberEmailController = TextEditingController();
-  final TextEditingController _shirtNumberController = TextEditingController(); // New controller for shirt number
-  String? _selectedPosition; // To hold the selected position
-  File? _pickedImage; // To store the selected image file
+  final TextEditingController _memberPhoneNumberController = TextEditingController(); // Changed from email to phone number
+  final TextEditingController _shirtNumberController = TextEditingController();
+  String? _selectedPosition;
 
   final List<String> _positions = const [
     'P', 'C', 'RH', 'LH', 'RW', 'LW', 'GK'
@@ -30,29 +26,17 @@ class _TeamMemberCreationScreenState extends State<TeamMemberCreationScreen> {
   @override
   void dispose() {
     _memberNameController.dispose();
-    _memberEmailController.dispose();
-    _shirtNumberController.dispose(); // Dispose the new controller
+    _memberPhoneNumberController.dispose(); // Dispose the new controller
+    _shirtNumberController.dispose();
     super.dispose();
-  }
-
-  // Function to pick an image from the gallery or camera
-  Future<void> _pickImage() async {
-    final ImagePicker picker = ImagePicker();
-    final XFile? image = await picker.pickImage(source: ImageSource.gallery); // Or ImageSource.camera
-
-    if (image != null) {
-      setState(() {
-        _pickedImage = File(image.path);
-      });
-    }
   }
 
   // Function to add the new member to Firestore.
   void _addMember() async {
     if (_memberNameController.text.isEmpty ||
-        _memberEmailController.text.isEmpty ||
-        _shirtNumberController.text.isEmpty || // Validate shirt number
-        _selectedPosition == null) { // Validate position
+        _memberPhoneNumberController.text.isEmpty || // Validate phone number
+        _shirtNumberController.text.isEmpty ||
+        _selectedPosition == null) {
       _showSnackBar('Please fill in all fields.', isError: true);
       return;
     }
@@ -69,19 +53,6 @@ class _TeamMemberCreationScreenState extends State<TeamMemberCreationScreen> {
     });
 
     try {
-      String? imageUrl;
-      if (_pickedImage != null) {
-        // Create a unique file name for the image in Firebase Storage
-        final fileName = '${DateTime.now().millisecondsSinceEpoch}_${_pickedImage!.path.split('/').last}';
-        final destination = 'team_images/${widget.teamId}/$fileName';
-
-        // Upload the image to Firebase Storage
-        final ref = FirebaseStorage.instance.ref(destination);
-        final uploadTask = ref.putFile(_pickedImage!);
-        final snapshot = await uploadTask.whenComplete(() {});
-        imageUrl = await snapshot.ref.getDownloadURL();
-      }
-
       // Access the sub-collection 'members' under the specific team document.
       await FirebaseFirestore.instance
           .collection('teams')
@@ -89,19 +60,18 @@ class _TeamMemberCreationScreenState extends State<TeamMemberCreationScreen> {
           .collection('members')
           .add({
         'name': _memberNameController.text.trim(),
-        'email': _memberEmailController.text.trim(),
+        'phoneNumber': _memberPhoneNumberController.text.trim(), // Storing phone number instead of email
         'shirtNumber': shirtNumber, // Add shirt number
         'position': _selectedPosition, // Add selected position
         'joinedAt': FieldValue.serverTimestamp(),
-        'imageUrl': imageUrl, // Store the image URL
+        'imageUrl': null, // Removed image upload logic, set to null
       });
       _showSnackBar('Member added successfully!');
       _memberNameController.clear();
-      _memberEmailController.clear();
-      _shirtNumberController.clear(); // Clear shirt number field
+      _memberPhoneNumberController.clear(); // Clear phone number field
+      _shirtNumberController.clear();
       setState(() {
-        _selectedPosition = null; // Reset selected position
-        _pickedImage = null; // Clear picked image
+        _selectedPosition = null;
       });
     } catch (e) {
       _showSnackBar('Error adding member: $e', isError: true);
@@ -150,12 +120,12 @@ class _TeamMemberCreationScreenState extends State<TeamMemberCreationScreen> {
             ),
             const SizedBox(height: 16),
             TextField(
-              controller: _memberEmailController,
+              controller: _memberPhoneNumberController,
               decoration: const InputDecoration(
-                labelText: 'Member Email',
+                labelText: 'Phone Number',
                 border: OutlineInputBorder(),
               ),
-              keyboardType: TextInputType.emailAddress,
+              keyboardType: TextInputType.phone, // Changed keyboard type to phone
             ),
             const SizedBox(height: 16),
             TextField(
@@ -193,28 +163,6 @@ class _TeamMemberCreationScreenState extends State<TeamMemberCreationScreen> {
             ),
             const SizedBox(height: 16),
             ElevatedButton.icon(
-              onPressed: _pickImage, // Call the _pickImage function
-              icon: const Icon(Icons.camera_alt),
-              label: const Text('Select Player Picture'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.grey[300],
-                foregroundColor: Colors.black54,
-              ),
-            ),
-            if (_pickedImage != null) // Display selected image preview
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 16.0),
-                child: Image.file(
-                  _pickedImage!,
-                  height: 100,
-                  width: 100,
-                  fit: BoxFit.cover,
-                ),
-              ),
-            const SizedBox(height: 24),
-            _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : ElevatedButton.icon(
               onPressed: _addMember,
               icon: const Icon(Icons.person_add),
               label: const Text('Add Member'),

@@ -4,3 +4,14 @@
       allow read, write: if true;
 
       // Members subcollection
+
+      // Matches subcollection
+      match /matches/{matchId} {
+        allow read, write: if true;
+      }
+    }
+
+    // Prepared Matches collection
+    match /preparedMatches/{documentId} {
+      allow read, write: if true;
+    }

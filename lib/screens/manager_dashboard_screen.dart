@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:statform/screens/team_member_creation_screen.dart';
 import 'package:statform/screens/match_management_screen.dart';
 import 'package:statform/screens/player_stats_screen.dart';
+import 'package:statform/screens/player_edit_screen.dart'; // Added import for PlayerEditScreen
 
 class ManagerDashboardScreen extends StatelessWidget {
   final String teamId;
@@ -156,12 +157,12 @@ class ManagerDashboardScreen extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const MatchManagementScreen(),
+                        builder: (context) => const MatchManagementScreen(), // No longer passing teamId
                       ),
                     );
                   },
                   icon: const Icon(Icons.sports_handball),
-                  label: const Text('Start New Match'),
+                  label: const Text('Select Players for a Match'),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
@@ -197,21 +198,53 @@ class ManagerDashboardScreen extends StatelessWidget {
                         final memberData = members[index].data() as Map<String, dynamic>;
                         final memberId = members[index].id;
                         final memberName = memberData['name'] ?? 'No Name';
-                        final imageUrl = memberData['imageUrl'];
                         return Card(
                           margin: const EdgeInsets.symmetric(vertical: 4),
                           child: ListTile(
-                            leading: imageUrl != null && imageUrl.isNotEmpty
-                                ? CircleAvatar(
-                                    backgroundImage: NetworkImage(imageUrl),
-                                    radius: 20,
-                                  )
-                                : const Icon(Icons.person),
+                            leading: const Icon(Icons.person),
                             title: Text(memberName),
-                            subtitle: Text(memberData['email'] ?? 'No Email'),
-                            trailing: IconButton(
-                              icon: const Icon(Icons.delete, color: Colors.red),
-                              onPressed: () => _confirmDeleteMember(context, memberId, memberName),
+                            subtitle: Text(
+                                'Shirt: ${memberData['shirtNumber'] ?? 'N/A'} | Position: ${memberData['position'] ?? 'N/A'} | Phone: ${memberData['phoneNumber'] ?? 'N/A'}'),
+                            trailing: SizedBox(
+                              width: 120, // Adjust width as needed to fit three icons
+                              child: Row(
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.edit, color: Colors.blueGrey),
+                                    onPressed: () {
+                                      // Navigate to PlayerEditScreen for this member
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => PlayerEditScreen(
+                                            teamId: teamId,
+                                            playerId: memberId,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.show_chart, color: Colors.green),
+                                    onPressed: () {
+                                      // Navigate to PlayerStatsScreen for this specific player
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => PlayerStatsScreen(
+                                            teamId: teamId,
+                                            playerId: memberId, // Pass the member ID as playerId
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.delete, color: Colors.red),
+                                    onPressed: () => _confirmDeleteMember(context, memberId, memberName),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         );
